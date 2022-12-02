@@ -1,0 +1,8 @@
+# pipenv install psycopg2
+# pipenv install flask sqlalchemy flask_sqlalchemy
+# pipenv install flask_marshmallow marshmallow
+# https://stackoverflow.com/questions/56796426/pipenv-consistently-failing-to-install-pyscopg2
+#  pipenv --rm (removes virtaul shell enviroment) delete piplock file
+# only need pipenv install flask sqlalchemy flask_sqlalchemy ,
+
+# from models.organizations import Organizations, organizations_schema, flask_marshmallow, marshmallow and it will install psycopg2 in addition

@@ -9,9 +9,9 @@ class Products(db.Model):
   product_id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
   name = db.Column(db.String())
   upc = db.Column(db.String(), nullable=False, unique=True)
-  # supplier_id = db.Column(UUID(as_uuid=True), db.ForeignKey('Suppliers.supplier_id',nullable = False))
+  supplier_id = db.Column(UUID(as_uuid=True), db.ForeignKey('Suppliers.supplier_id'), nullable = False)
   active = db.Column(db.Boolean(), default=True)
-
+  supplier = db.relationship('Suppliers', back_populates='products')
 
   def __init__(self, name, upc, supplier_id, active):
     self.name = name
@@ -19,12 +19,12 @@ class Products(db.Model):
     self.supplier_id = supplier_id
     self.active = active
 
-class ProductSchema(ma.Schema):
+class ProductsSchema(ma.Schema):
 
   class Meta:
     fields = ['product_id','name', 'supplier', 'upc','active']
   
-  supplier = ma.fields.Nested(SuppliersSchema(only=('supplier_id', 'name', 'type', 'active')))
+  supplier = ma.fields.Nested(SuppliersSchema())
 
-product_schema = ProductSchema()
-products_schema = ProductSchema( many=True )
+product_schema = ProductsSchema()
+products_schema = ProductsSchema( many=True )

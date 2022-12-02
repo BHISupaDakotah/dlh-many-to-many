@@ -13,6 +13,8 @@ class Suppliers(db.Model):
   # var name = db.relationship('pk table pulling from', back_populates='fk table')
   type = db.relationship('Types', back_populates='suppliers')
 
+  products = db.relationship('Products', back_populates='supplier', lazy=True)
+
   def __init__(self, type_id, name, active):
     self.type_id = type_id
     self.name = name

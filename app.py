@@ -227,7 +227,7 @@ def delete_product(product_id):
   db.session.delete(product)
   db.session.commit()
 
-  return jsonify(job_schema.dump(product)), 201
+  return jsonify(product_schema.dump(product)), 201
 
 # deactivate
 @app.route('/product/deactivate/<product_id>', methods=['GET'])

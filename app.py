@@ -134,26 +134,90 @@ def inventory_add():
   if not post_data:
     post_data.form
 
-  name = post_data.get('name')
-  quantity = post_data('quantity')
-  active = post_data('active')
+  inventory_quantity = post_data.get('inventory_quantity')
+  product_id = post_data.get('product_id')
+  active = post_data.get('active')
 
   try: 
-    response = add_inventory(name, quantity, active)
+    response = add_inventory(inventory_quantity, product_id, active)
     return response
   except IntegrityError:
     return jsonify('duplicate value for unique key')
 
-def add_inventory(name, quantity, active):
-  new_inventory = Inventory(name, quantity, active)
+def add_inventory(inventory_quantity, product_id, active):
+  new_inventory = Inventory(inventory_quantity, product_id, active)
 
   db.session.add(new_inventory)
   db.session.commit()
 
-  return jsonify(inventory_schema(new_inventory)), 200
+  return jsonify(inventory_schema.dump(new_inventory)), 200
 
-# get all
-# _________ start with get all inventory then get all inventory etc _________
+# read
+@app.route('/inventories/get', methods=['GET'])
+def get_all_active_inventories():
+  inventories = db.session.query(Inventory).filter(Inventory.active == True).all()
+  
+  return(inventories_schema.dump(inventories)), 200
+
+@app.route('/inventory/<inventory_id>')
+def get_inventory_by_id(inventory_id):
+  inventory = db.session.query(Inventory).filter(Inventory.inventory_id == inventory_id).first()
+
+  return jsonify(inventory_schema.dump(inventory)), 200
+  
+
+#update
+@app.route('/inventory/update/<inventory_id>', methods=['POST', 'PUT'])
+def inventory_update(inventory_id):
+  inventory = db.session.query(Inventory).filter(Inventory.inventory_id == inventory_id).first()
+
+  if not inventory:
+    return jsonify("sorry dude inventory"), 404
+  
+  post_data = request.json
+  if not post_data:
+    post_data.request.form
+
+  populate_object(inventory, post_data)
+  db.session.commit()
+
+  return jsonify(inventory_schema.dump(inventory)), 200
+
+
+#delete -- broken
+@app.route('/inventory/delete/<inventory_id>', methods=['DELETE'])
+def delete_inventory(inventory_id):
+  inventory = db.session.query(Inventory).filter(Inventory.inventory_id == inventory_id).first()
+
+  db.session.delete(inventory)
+  db.session.commit()
+
+  return jsonify(inventory_schema.dump(inventory)), 200
+
+#deactivate
+@app.route('/inventory/deactivate/<inventory_id>', methods=['GET'])
+def deactivate_inventory(inventory_id):
+  inventory = db.session.query(Inventory).filter(Inventory.inventory_id == inventory_id).first()
+
+  if not inventory:
+    return jsonify("no inventory with that id")
+
+  inventory.active = False
+  db.session.commit()
+  return jsonify(inventory_schema.dump(inventory)), 200
+
+#activate
+@app.route('/inventory/activate/<inventory_id>', methods=['GET'])
+def activate_inventory(inventory_id):
+  inventory = db.session.query(Inventory).filter(Inventory.inventory_id == inventory_id).first()
+
+  if not inventory:
+    return jsonify("no inventory with that id")
+
+  inventory.active = True
+  db.session.commit()
+  return jsonify(inventory_schema.dump(inventory)), 200
+
 #-------/
 
 # Products --
@@ -354,8 +418,6 @@ def activate_supplier(supplier_id):
   db.session.commit()
 
   return jsonify(supplier_schema.dump(supplier)), 200
-
-# _________ start with get all suppliers then get all suppliers etc _________
 
 #----------/
 

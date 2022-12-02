@@ -13,6 +13,8 @@ class Products(db.Model):
   active = db.Column(db.Boolean(), default=True)
   supplier = db.relationship('Suppliers', back_populates='products')
 
+  inventory = db.relationship('Inventory', back_populates='products', lazy=True)
+
   def __init__(self, name, upc, supplier_id, active):
     self.name = name
     self.upc = upc

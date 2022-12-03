@@ -8,6 +8,8 @@ from inventory import Inventory, inventory_schema, inventories_schema
 from product import Products, product_schema, products_schema
 from supplier import Suppliers, supplier_schema, suppliers_schema
 from type import Types, type_schema, types_schema
+from customer import Customers, customer_schema, customers_schema
+
 app = Flask(__name__)
 
 app.config['SQLALCHEMY_DATABASE_URI'] = "postgresql://dakotahholmes@localhost:5432/manytomany"
@@ -39,19 +41,18 @@ def job_add():
     post_data = request.form
   
   description = post_data.get('description')
-  project_manager = post_data.get('project_manager')
   location = post_data.get('location')
   customer_id = post_data.get('customer_id')
   active = post_data.get('active')
 
   try:
-    response = add_job(description, project_manager, location, customer_id, active)
+    response = add_job(description, location, customer_id, active)
     return response
   except IntegrityError:
     return jsonify('duplicated value for unique key'), 400
 
-def add_job(description, project_manager, location, customer_id, active):
-  new_job = Jobs(description, project_manager, location, customer_id, active)
+def add_job(description, location, customer_id, active):
+  new_job = Jobs(description, location, customer_id, active)
 
   db.session.add(new_job)
 
@@ -420,8 +421,6 @@ def activate_supplier(supplier_id):
   return jsonify(supplier_schema.dump(supplier)), 200
 
 #----------/
-
-#----------/
 # -- Types
 # create
 @app.route('/type/add', methods=['POST','PUT'])
@@ -489,6 +488,7 @@ def delete_type(type_id):
   db.session.delete(type_result)
   db.session.commit()
   return jsonify(type_schema.dump(type_result)), 201
+
 # deactivate
 @app.route('/type/deactivate/<type_id>', methods=['GET'])
 def deactivate_type(type_id):
@@ -501,6 +501,7 @@ def deactivate_type(type_id):
   db.session.commit()
 
   return jsonify(type_schema.dump(type_result)), 200
+
 # activate
 @app.route('/type/activate/<type_id>')
 def activate_type(type_id):
@@ -514,6 +515,101 @@ def activate_type(type_id):
   return jsonify(type_schema.dump(type_result))
 
 #  --------/
+# Customers
+# create
+@app.route('/customer/add', methods=['POST'])
+def customer_add():
+  post_data = request.json
+  if not post_data:
+    post_data = request.form
+
+  name = post_data.get('name')
+  phone = post_data.get('phone')
+  address = post_data.get('address')
+  city = post_data.get('city')
+  state = post_data.get('state')
+  zip_code = post_data.get('zip_code')
+  active = post_data.get('active')
+
+  try:
+    response = add_customer(name, phone, address, city, state, zip_code, active)
+    return response
+  except IndexError:
+    return jsonify('duplcated value for unique key'),400
+  
+def add_customer(name, phone, address, city, state, zip_code, active):
+  new_customer = Customers(name, phone, address, city, state, zip_code, active)
+
+  db.session.add(new_customer)
+  db.session.commit()
+
+  return jsonify(customer_schema.dump(new_customer)), 200
+
+# read
+@app.route('/customers/get', methods=['GET'])
+def get_all_active_customers():
+  customers = db.session.query(Customers).filter(Customers.active == True).all()
+
+  return jsonify(customers_schema.dump(customers))
+
+@app.route('/customer/<customer_id>', methods=['GET'])
+def get_customer_by_id(customer_id):
+  customer = db.session.query(Customers).filter(Customers.customer_id == customer_id).first()
+
+  return jsonify(customer_schema.dump(customer))
+
+# update
+@app.route('/customer/update/<customer_id>', methods=['POST','PUT'])
+def update_customer(customer_id):
+  customer = db.session.query(Customers).filter(Customers.customer_id == customer_id).first()
+
+  if not customer:
+    return("sorry dude no customer")
+  
+  post_data = request.json
+  if not post_data:
+    post_data = request.form
+
+  populate_object(customer, post_data)
+  db.session.commit()
+  
+  return jsonify(customer_schema.dump(customer))
+
+# delete ???
+@app.route('/customer/delete/<customer_id>', methods=['GET'])
+def delete_customer(customer_id):
+  customer = db.session.query(Customers).filter(Customers.customer_id == customer_id).first()
+
+  db.session.delete(customer)
+  db.session.commit()
+
+  return jsonify(customer_schema.dump(customer)), 201
+# deactivate
+@app.route('/customer/deactivate/<customer_id>')
+def deactivate_customer(customer_id):
+  customer = db.session.query(Customers).filter(Customers.customer_id == customer_id).first()
+
+  if not customer:
+    return(f'no customer with id: {customer_id}'), 404
+
+  customer.active = False
+  db.session.commit()
+
+  return jsonify(customer_schema.dump(customer)), 200
+
+# activate
+@app.route('/customer/activate/<customer_id>')
+def activate_customer(customer_id):
+  customer = db.session.query(Customers).filter(Customers.customer_id == customer_id).first()
+
+  if not customer:
+    return(f'no customer with id: {customer_id}'), 404
+
+  customer.active = True
+  db.session.commit()
+
+  return jsonify(customer_schema.dump(customer)), 200
+# --------/
 
 if __name__ == '__main__':
   create_all()

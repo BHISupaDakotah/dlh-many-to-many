@@ -3,6 +3,7 @@ from sqlalchemy.dialects.postgresql import UUID
 from db import db
 import marshmallow as ma
 from customer import CustomersSchema
+from jobinventoryxref import JobInventorySchema
 
 
 class Jobs(db.Model):
@@ -14,6 +15,7 @@ class Jobs(db.Model):
   active = db.Column(db.Boolean(), default=True)
 
   customer = db.relationship('Customers', back_populates='jobs')
+  onsite_quantity = db.relationship('JobInventory', back_populates='jobs')
 
   def __init__(self, description, location, customer_id, active):
     
@@ -25,9 +27,10 @@ class Jobs(db.Model):
 
 class JobsSchema(ma.Schema):
   class Meta:
-    fields = ['job_id', 'description', 'location', 'customer', 'active']
+    fields = ['job_id', 'description', 'location', 'customer', 'onsite_quantity', 'active']
 
   customer = ma.fields.Nested(CustomersSchema())  
+  onsite_quantity = ma.fields.Nested(JobInventorySchema(), many=True )
 
 job_schema = JobsSchema()
 jobs_schema = JobsSchema( many=True )

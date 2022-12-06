@@ -9,6 +9,7 @@ from product import Products, product_schema, products_schema
 from supplier import Suppliers, supplier_schema, suppliers_schema
 from type import Types, type_schema, types_schema
 from customer import Customers, customer_schema, customers_schema
+from jobinventoryxref import JobInventory, jobinventory_schema, jobinventories_schema
 
 app = Flask(__name__)
 
@@ -610,6 +611,34 @@ def activate_customer(customer_id):
 
   return jsonify(customer_schema.dump(customer)), 200
 # --------/
+
+# JobInventory
+#create
+@app.route('/jobinventory/add', methods=['POST'])
+def jobinventory_add():
+  post_data = request.json
+  if not post_data:
+    post_data = request.form
+
+  inventory_id = post_data.get('inventory_id')
+  job_id = post_data.get('job_id')
+  onsite_quantity = post_data.get('onsite_quantity')
+
+
+  try:
+    response = add_jobinventory(inventory_id, job_id, onsite_quantity)
+    return response
+  except IndexError:
+    return jsonify('duplcated value for unique key'), 400
+
+def add_jobinventory(inventory_id, job_id, onsite_quantity):
+  new_jobinventory = JobInventory(inventory_id, job_id, onsite_quantity)
+
+  db.session.add(new_jobinventory)
+  db.session.commit()
+
+  return jsonify(jobinventory_schema.dump(new_jobinventory)), 200
+
 
 if __name__ == '__main__':
   create_all()

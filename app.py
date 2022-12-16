@@ -136,18 +136,18 @@ def inventory_add():
   if not post_data:
     post_data.form
 
-  inventory_quantity = post_data.get('inventory_quantity')
+  # inventory_quantity = post_data.get('inventory_quantity')
   product_id = post_data.get('product_id')
   active = post_data.get('active')
 
   try: 
-    response = add_inventory(inventory_quantity, product_id, active)
+    response = add_inventory(product_id, active)
     return response
   except IntegrityError:
     return jsonify('duplicate value for unique key')
 
-def add_inventory(inventory_quantity, product_id, active):
-  new_inventory = Inventory(inventory_quantity, product_id, active)
+def add_inventory(product_id, active):
+  new_inventory = Inventory(product_id, active)
 
   db.session.add(new_inventory)
   db.session.commit()
@@ -623,22 +623,53 @@ def jobinventory_add():
   inventory_id = post_data.get('inventory_id')
   job_id = post_data.get('job_id')
   onsite_quantity = post_data.get('onsite_quantity')
+  active = post_data.get('active')
 
 
   try:
-    response = add_jobinventory(inventory_id, job_id, onsite_quantity)
+    response = add_jobinventory(inventory_id, job_id, onsite_quantity, active)
     return response
   except IndexError:
     return jsonify('duplcated value for unique key'), 400
 
-def add_jobinventory(inventory_id, job_id, onsite_quantity):
-  new_jobinventory = JobInventory(inventory_id, job_id, onsite_quantity)
+def add_jobinventory(inventory_id, job_id,onsite_quantity, active):
+  new_jobinventory = JobInventory(inventory_id, job_id, onsite_quantity, active)
 
   db.session.add(new_jobinventory)
   db.session.commit()
 
   return jsonify(jobinventory_schema.dump(new_jobinventory)), 200
 
+# read
+@app.route('/jobinventories/get')
+def get_all_active_inventoryjobs():
+  results = db.session.query(JobInventory).filter(JobInventory.active == True).all()
+
+  return jsonify(jobinventories_schema.dump(results)), 200
+
+@app.route('/jobinventory/<job_id>', methods=['GET'])
+def get_inventory_by_job_id(job_id):
+  job = db.session.query(JobInventory).filter(JobInventory.job_id == job_id).all()
+
+  return jsonify(jobinventories_schema.dump(job))
+
+
+#update
+@app.route('/jobinventory/update/<inventory_id>', methods=['POST','PUT'])
+def update_inventory(inventory_id):
+  inventory = db.session.query(JobInventory).filter(JobInventory.inventory_id == inventory_id).first()
+
+  if not inventory:
+    return("sorry dude no inventory")
+
+  post_data = request.json
+  if not post_data:
+    post_data = request.form
+  
+  populate_object(inventory, post_data)
+  db.session.commit()
+
+  return jsonify(jobinventory_schema.dump(inventory))
 
 if __name__ == '__main__':
   create_all()

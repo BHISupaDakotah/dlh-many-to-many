@@ -34,3 +34,5 @@ class JobsSchema(ma.Schema):
 
 job_schema = JobsSchema()
 jobs_schema = JobsSchema( many=True )
+
+# test
